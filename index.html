@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>七夕快乐</title>
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: url("./背景图.png") no-repeat center center fixed;
+        background-size: cover;
+        font-family: Arial, sans-serif;
+      }
+
+      canvas {
+        display: block;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .message {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 2.5rem;
+        color: white;
+        text-align: center;
+        z-index: 2;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="display: flex; justify-content: center; color: white">
+      郑晓玲七夕快乐
+    </h1>
+    <canvas id="heartCanvas"></canvas>
+    <div class="message">
+      <p style="font-family: 华文行楷; font-size: 50px">七夕快乐！</p>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("heartCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = [];
+      const platformParticles = [];
+      const numParticles = 1500; // 粒子数量
+      const platformParticlesCount = 600; // 平台粒子数量
+      const heartScale = 11; // 控制心形的大小比例
+
+      // 生成心形的点
+      function createHeartPoints() {
+        const points = [];
+        for (let t = 0; t < Math.PI * 2; t += 0.01) {
+          const x = heartScale * (16 * Math.pow(Math.sin(t), 3));
+          const y =
+            -heartScale *
+            (13 * Math.cos(t) -
+              5 * Math.cos(2 * t) -
+              2 * Math.cos(3 * t) -
+              Math.cos(4 * t));
+          points.push({ x, y });
+        }
+        return points;
+      }
+
+      const heartPoints = createHeartPoints();
+
+      // 创建心形粒子
+      function createParticle(isInsideHeart = false) {
+        const point =
+          heartPoints[Math.floor(Math.random() * heartPoints.length)];
+        return {
+          x: point.x + canvas.width / 2,
+          y: point.y + canvas.height / 2,
+          size: Math.random() * 2 + 1, // 粒子大小
+          color: `rgba(255, 20, 147, ${Math.random()})`, // 粉色粒子，带透明度
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: (Math.random() - 0.5) * 0.5,
+          life: Math.random() * 100 + 50,
+          isInsideHeart: isInsideHeart, // 标记粒子是否在心形内部
+        };
+      }
+
+      // 创建平台粒子
+      function createPlatformParticle() {
+        return {
+          x: canvas.width / 2 - 100 + Math.random() * 200, // 平台宽度
+          y: canvas.height / 2 + 100 + Math.random() * 20, // 平台位置
+          size: Math.random() * 2 + 1,
+          color: `rgba(255, 255, 255, ${Math.random()})`, // 白色粒子，带透明度
+          vy: Math.random() * 2 + 0.5, // 下落速度
+          life: Math.random() * 200 + 100,
+        };
+      }
+
+      for (let i = 0; i < numParticles; i++) {
+        particles.push(createParticle(Math.random() > 0.5));
+      }
+
+      for (let i = 0; i < platformParticlesCount; i++) {
+        platformParticles.push(createPlatformParticle());
+      }
+
+      function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 画心形粒子
+        particles.forEach((p, i) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life--;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+
+          // 如果粒子在心形内部，让它们缓慢上升
+          if (p.isInsideHeart) {
+            p.y -= 0.3;
+          }
+
+          if (p.life <= 0) {
+            particles[i] = createParticle(p.isInsideHeart);
+          }
+        });
+
+        // 画平台粒子
+        platformParticles.forEach((p, i) => {
+          p.y += p.vy;
+          p.life--;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+
+          // 粒子触碰平台后水平扩散摊开
+          if (p.y >= canvas.height - 10) {
+            // 调整粒子落到页面底部的平台上
+            p.vy = 0;
+            p.vx = (Math.random() - 0.5) * 4; // 增大水平速度以扩散摊开
+          }
+
+          if (p.life <= 0) {
+            platformParticles[i] = createPlatformParticle();
+          }
+        });
+        requestAnimationFrame(animateParticles);
+      }
+
+      animateParticles();
+    </script>
+  </body>
+</html>
